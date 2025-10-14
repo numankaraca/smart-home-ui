@@ -63,3 +63,16 @@ button {
 button:hover {
     background-color: #e0e0e0;
 }
+
+/* style.css dosyasının en altına ekle */
+
+form {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+form input {
+    flex-grow: 1; /* Input alanının kalan boşluğu kaplamasını sağlar */
+    padding: 5px;
+}

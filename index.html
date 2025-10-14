@@ -21,12 +21,16 @@
     </div>
 
     <div class="panel">
-        <h2>Cihazlar</h2>
+        <h2 id="devices-panel-title">Cihazlar</h2>
+
+        <form id="add-device-form" hidden>
+            <input type="text" id="new-device-name" placeholder="Yeni cihaz adı..." required />
+            <button type="submit">Cihaz Ekle</button>
+        </form>
         <ul id="devices-list">
         </ul>
     </div>
-</div>
 
-<script src="app.js"></script>
+</div> <script src="app.js"></script>
 </body>
 </html>
