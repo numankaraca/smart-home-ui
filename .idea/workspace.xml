@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="de8a0fe5-ba1f-43b5-9834-efd7a33d8348" name="Changes" comment="" />
+    <list default="true" id="de8a0fe5-ba1f-43b5-9834-efd7a33d8348" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,7 +51,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-babbdf50b680-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.15989.155" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-WS-243.26053.12" />
       </set>
     </attachedChunks>
   </component>
@@ -62,7 +64,8 @@
       <option name="presentableId" value="Default" />
       <updated>1760213636818</updated>
       <workItem from="1760213637875" duration="2114000" />
-      <workItem from="1760459817125" duration="3634000" />
+      <workItem from="1760459817125" duration="3866000" />
+      <workItem from="1760551452534" duration="514000" />
     </task>
     <servers />
   </component>
