@@ -94,3 +94,32 @@ form input {
     color: red;
     margin-top: 10px;
 }
+
+/* =================================
+   Notification Styles
+   ================================= */
+#notification-container {
+    position: fixed; /* Sayfayı kaydırsan bile yerinde kalır */
+    top: 20px;
+    right: 20px;
+    z-index: 1000; /* Diğer tüm elementlerin üzerinde görünmesini sağlar */
+}
+
+.notification {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: white;
+    min-width: 250px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+/* Başarı bildirimleri için yeşil arka plan */
+.notification.success {
+    background-color: #28a745;
+}
+
+/* Hata bildirimleri için kırmızı arka plan */
+.notification.error {
+    background-color: #dc3545;
+}

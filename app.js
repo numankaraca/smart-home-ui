@@ -9,15 +9,13 @@ let currentRoomId = null;
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-
-    // Sayfa yüklendiğinde tarayıcı hafızasında token var mı diye kontrol et
     const storedToken = localStorage.getItem('jwtToken');
     if (storedToken) {
         jwtToken = storedToken;
-        showMainApp(); // Token varsa, ana uygulamayı göster
-        fetchRooms();  // ve odaları getir
+        showMainApp();
+        fetchRooms();
     } else {
-        showLoginScreen(); // Token yoksa, giriş ekranını göster
+        showLoginScreen();
     }
 });
 
@@ -29,7 +27,7 @@ function setupEventListeners() {
 }
 
 // =================================================================
-// Görünüm Kontrol Fonksiyonları (Login Ekranı / Ana Panel)
+// Görünüm Kontrolü
 // =================================================================
 function showLoginScreen() {
     document.getElementById('login-container').hidden = false;
@@ -42,33 +40,40 @@ function showMainApp() {
 }
 
 // =================================================================
-// Kimlik Doğrulama (Authentication) Fonksiyonları
+// Bildirim Fonksiyonu
+// =================================================================
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    container.appendChild(notification);
+    setTimeout(() => { notification.remove(); }, 3000);
+}
+
+// =================================================================
+// Kimlik Doğrulama (Authentication)
 // =================================================================
 async function handleLogin(event) {
     event.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const errorElement = document.getElementById('login-error');
-    errorElement.textContent = ''; // Hata mesajını temizle
-
+    errorElement.textContent = '';
     try {
         const response = await fetch('http://localhost:8080/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
-
         if (!response.ok) {
             throw new Error('Kullanıcı adı veya şifre hatalı!');
         }
-
         const data = await response.json();
         jwtToken = data.token;
-        localStorage.setItem('jwtToken', jwtToken); // Token'ı tarayıcı hafızasına kaydet
-
-        showMainApp(); // Ana paneli göster
-        fetchRooms();  // Odaları getir
-
+        localStorage.setItem('jwtToken', jwtToken);
+        showMainApp();
+        fetchRooms();
     } catch (error) {
         console.error('Giriş yapılırken hata:', error);
         errorElement.textContent = error.message;
@@ -77,72 +82,63 @@ async function handleLogin(event) {
 
 function handleLogout() {
     jwtToken = null;
-    localStorage.removeItem('jwtToken'); // Token'ı hafızadan sil
-    showLoginScreen(); // Giriş ekranına geri dön
+    localStorage.removeItem('jwtToken');
+    showLoginScreen();
 }
 
 function handleAuthError() {
-    console.error("Yetkilendirme hatası veya token süresi dolmuş. Çıkış yapılıyor.");
+    showNotification("Oturum süreniz doldu, lütfen tekrar giriş yapın.", "error");
     handleLogout();
 }
 
 // =================================================================
-// API İstekleri için Yardımcı Fonksiyon (En Önemli Parça)
+// API Yardımcı Fonksiyonu
 // =================================================================
 async function fetchWithAuth(url, options = {}) {
-    const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-    };
-
+    const headers = { 'Content-Type': 'application/json', ...options.headers };
     if (jwtToken) {
         headers['Authorization'] = `Bearer ${jwtToken}`;
     }
-
     const response = await fetch(url, { ...options, headers });
-
-    // Eğer token geçersizse (401/403 hatası), otomatik olarak çıkış yap.
-    if (response.status === 401 || response.status === 403) {
+    if ((response.status === 401 || response.status === 403) && !url.includes('/auth/login')) {
         handleAuthError();
         throw new Error('Yetkilendirme hatası!');
     }
-
     return response;
 }
 
 // =================================================================
-// Form Yönetimi Fonksiyonları
+// Form Yönetimi
 // =================================================================
 function handleAddRoom(event) {
     event.preventDefault();
-    const newRoomNameInput = document.getElementById('new-room-name');
-    const roomName = newRoomNameInput.value.trim();
+    const input = document.getElementById('new-room-name');
+    const roomName = input.value.trim();
     if (roomName) {
         addRoom(roomName);
-        newRoomNameInput.value = '';
+        input.value = '';
     }
 }
 
 function handleAddDevice(event) {
     event.preventDefault();
-    const newDeviceNameInput = document.getElementById('new-device-name');
-    const deviceName = newDeviceNameInput.value.trim();
+    const input = document.getElementById('new-device-name');
+    const deviceName = input.value.trim();
     if (deviceName && currentRoomId) {
         addDevice(currentRoomId, deviceName);
-        newDeviceNameInput.value = '';
+        input.value = '';
     }
 }
 
 // =================================================================
-// CRUD Fonksiyonları (Hepsi artık 'fetchWithAuth' kullanıyor)
+// CRUD Fonksiyonları (Bildirimli)
 // =================================================================
 
 // --- Oda Fonksiyonları ---
 async function fetchRooms() {
     try {
         const response = await fetchWithAuth('http://localhost:8080/api/v1/rooms');
-        if (!response.ok) throw new Error('Odalar yüklenemedi.');
-
+        if (!response.ok) throw new Error();
         const rooms = await response.json();
         const roomsList = document.getElementById('rooms-list');
         roomsList.innerHTML = '';
@@ -153,11 +149,9 @@ async function fetchRooms() {
             roomLink.href = '#';
             roomLink.dataset.roomId = room.id;
             roomLink.addEventListener('click', () => fetchDevicesForRoom(room.id));
-
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Sil';
             deleteButton.addEventListener('click', () => deleteRoom(room.id));
-
             listItem.appendChild(roomLink);
             listItem.appendChild(deleteButton);
             roomsList.appendChild(listItem);
@@ -173,10 +167,12 @@ async function addRoom(name) {
             method: 'POST',
             body: JSON.stringify({ name })
         });
-        if (!response.ok) throw new Error('Oda eklenemedi.');
-        fetchRooms(); // Listeyi yenile
+        if (!response.ok) throw new Error();
+        showNotification(`'${name}' odası başarıyla eklendi!`, 'success');
+        fetchRooms();
     } catch (error) {
         console.error('Oda eklenirken hata:', error);
+        showNotification('Oda eklenirken bir hata oluştu.', 'error');
     }
 }
 
@@ -184,13 +180,15 @@ async function deleteRoom(roomId) {
     if (!confirm(`Bu odayı ve içindeki tüm cihazları silmek istediğinizden emin misiniz?`)) return;
     try {
         const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Oda silinemedi.');
+        if (!response.ok) throw new Error();
+        showNotification(`Oda başarıyla silindi.`, 'success');
         fetchRooms();
         document.getElementById('devices-list').innerHTML = '';
         document.getElementById('devices-panel-title').textContent = 'Cihazlar';
         document.getElementById('add-device-form').hidden = true;
     } catch (error) {
         console.error('Oda silinirken hata:', error);
+        showNotification('Oda silinirken bir hata oluştu.', 'error');
     }
 }
 
@@ -209,7 +207,7 @@ async function fetchDevicesForRoom(roomId) {
 
     try {
         const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}/devices`);
-        if (!response.ok) throw new Error('Cihazlar yüklenemedi.');
+        if (!response.ok) throw new Error();
         const devices = await response.json();
         devicesList.innerHTML = '';
         if (devices.length === 0) {
@@ -254,10 +252,12 @@ async function addDevice(roomId, deviceName) {
             method: 'POST',
             body: JSON.stringify({ name: deviceName, status: false })
         });
-        if (!response.ok) throw new Error('Cihaz eklenemedi.');
+        if (!response.ok) throw new Error();
+        showNotification(`'${deviceName}' cihazı başarıyla eklendi.`, 'success');
         fetchDevicesForRoom(roomId);
     } catch (error) {
         console.error('Cihaz eklenirken hata:', error);
+        showNotification('Cihaz eklenirken bir hata oluştu.', 'error');
     }
 }
 
@@ -265,10 +265,12 @@ async function deleteDevice(deviceId, roomId) {
     if (!confirm(`Bu cihazı silmek istediğinizden emin misiniz?`)) return;
     try {
         const response = await fetchWithAuth(`http://localhost:8080/api/v1/devices/${deviceId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Cihaz silinemedi.');
+        if (!response.ok) throw new Error();
+        showNotification(`Cihaz başarıyla silindi.`, 'success');
         fetchDevicesForRoom(roomId);
     } catch (error) {
         console.error('Cihaz silinirken hata:', error);
+        showNotification('Cihaz silinirken bir hata oluştu.', 'error');
     }
 }
 
@@ -278,10 +280,12 @@ async function toggleDeviceStatus(deviceId, deviceName, newStatus, roomId) {
             method: 'PUT',
             body: JSON.stringify({ name: deviceName, status: newStatus })
         });
-        if (!response.ok) throw new Error('Cihaz durumu güncellenemedi.');
+        if (!response.ok) throw new Error();
+        showNotification(`Cihaz durumu güncellendi.`, 'success');
         fetchDevicesForRoom(roomId);
     } catch (error) {
         console.error('Cihaz durumu güncellenirken hata:', error);
+        showNotification('Cihaz durumu güncellenirken bir hata oluştu.', 'error');
     }
 }
 
@@ -314,9 +318,11 @@ async function updateDeviceName(device, newName, roomId) {
             method: 'PUT',
             body: JSON.stringify({ name: newName, status: device.status })
         });
-        if (!response.ok) throw new Error('Cihaz adı güncellenemedi.');
+        if (!response.ok) throw new Error();
+        showNotification(`Cihaz adı güncellendi.`, 'success');
         fetchDevicesForRoom(roomId);
     } catch (error) {
         console.error('Cihaz adı güncellenirken hata:', error);
+        showNotification('Cihaz adı güncellenirken bir hata oluştu.', 'error');
     }
 }
