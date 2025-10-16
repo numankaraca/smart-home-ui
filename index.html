@@ -6,31 +6,44 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Akıllı Ev Kontrol Paneli</h1>
 
-<div class="container">
-    <div class="panel">
-        <h2>Odalar</h2>
+<div id="login-container" class="panel">
+    <h2>Giriş Yap</h2>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Kullanıcı Adı" required>
+        <input type="password" id="password" placeholder="Şifre" required>
+        <button type="submit">Giriş Yap</button>
+    </form>
+    <p id="login-error" class="error-message"></p>
+</div>
 
-        <form id="add-room-form">
-            <input type="text" id="new-room-name" placeholder="Yeni oda adı..." required />
-            <button type="submit">Oda Ekle</button>
-        </form>
-        <ul id="rooms-list">
-        </ul>
+<div id="main-container" hidden>
+    <div class="header">
+        <h1>Akıllı Ev Kontrol Paneli</h1>
+        <button id="logout-button">Çıkış Yap</button>
     </div>
 
-    <div class="panel">
-        <h2 id="devices-panel-title">Cihazlar</h2>
+    <div class="container">
+        <div class="panel">
+            <h2>Odalar</h2>
+            <form id="add-room-form">
+                <input type="text" id="new-room-name" placeholder="Yeni oda adı..." required />
+                <button type="submit">Oda Ekle</button>
+            </form>
+            <ul id="rooms-list"></ul>
+        </div>
 
-        <form id="add-device-form" hidden>
-            <input type="text" id="new-device-name" placeholder="Yeni cihaz adı..." required />
-            <button type="submit">Cihaz Ekle</button>
-        </form>
-        <ul id="devices-list">
-        </ul>
+        <div class="panel">
+            <h2 id="devices-panel-title">Cihazlar</h2>
+            <form id="add-device-form" hidden>
+                <input type="text" id="new-device-name" placeholder="Yeni cihaz adı..." required />
+                <button type="submit">Cihaz Ekle</button>
+            </form>
+            <ul id="devices-list"></ul>
+        </div>
     </div>
+</div>
 
-</div> <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

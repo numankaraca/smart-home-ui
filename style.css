@@ -76,3 +76,21 @@ form input {
     flex-grow: 1; /* Input alanının kalan boşluğu kaplamasını sağlar */
     padding: 5px;
 }
+
+/* style.css dosyasının en altına ekle */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#login-container {
+    max-width: 400px;
+    margin: 100px auto; /* Sayfanın ortasında durması için */
+}
+
+.error-message {
+    color: red;
+    margin-top: 10px;
+}

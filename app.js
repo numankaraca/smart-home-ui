@@ -1,67 +1,148 @@
-// Global değişkenimiz, sadece BİR KEZ burada tanımlanıyor.
-let currentRoomId_full = null;
+// =================================================================
+// Global Değişkenler
+// =================================================================
+let jwtToken = null;
+let currentRoomId = null;
 
-// Sayfa yüklendiğinde çalışacak ana fonksiyonlar
+// =================================================================
+// Ana Başlangıç Noktası ve Olay Dinleyicileri
+// =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    fetchRooms_full();
+    setupEventListeners();
 
-    const addRoomForm = document.getElementById('add-room-form');
-    addRoomForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const newRoomNameInput = document.getElementById('new-room-name');
-        const roomName = newRoomNameInput.value.trim();
-        if (roomName) {
-            addRoom_full(roomName);
-            newRoomNameInput.value = '';
-        }
-    });
-
-    const addDeviceForm = document.getElementById('add-device-form');
-    addDeviceForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const newDeviceNameInput = document.getElementById('new-device-name');
-        const deviceName = newDeviceNameInput.value.trim();
-        if (deviceName && currentRoomId_full) {
-            addDevice_full(currentRoomId_full, deviceName);
-            newDeviceNameInput.value = '';
-        }
-    });
+    // Sayfa yüklendiğinde tarayıcı hafızasında token var mı diye kontrol et
+    const storedToken = localStorage.getItem('jwtToken');
+    if (storedToken) {
+        jwtToken = storedToken;
+        showMainApp(); // Token varsa, ana uygulamayı göster
+        fetchRooms();  // ve odaları getir
+    } else {
+        showLoginScreen(); // Token yoksa, giriş ekranını göster
+    }
 });
 
-async function addRoom_full(name) {
+function setupEventListeners() {
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('logout-button').addEventListener('click', handleLogout);
+    document.getElementById('add-room-form').addEventListener('submit', handleAddRoom);
+    document.getElementById('add-device-form').addEventListener('submit', handleAddDevice);
+}
+
+// =================================================================
+// Görünüm Kontrol Fonksiyonları (Login Ekranı / Ana Panel)
+// =================================================================
+function showLoginScreen() {
+    document.getElementById('login-container').hidden = false;
+    document.getElementById('main-container').hidden = true;
+}
+
+function showMainApp() {
+    document.getElementById('login-container').hidden = true;
+    document.getElementById('main-container').hidden = false;
+}
+
+// =================================================================
+// Kimlik Doğrulama (Authentication) Fonksiyonları
+// =================================================================
+async function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorElement = document.getElementById('login-error');
+    errorElement.textContent = ''; // Hata mesajını temizle
+
     try {
-        const response = await fetch('http://localhost:8080/api/v1/rooms', {
+        const response = await fetch('http://localhost:8080/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name })
+            body: JSON.stringify({ username, password })
         });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`'${name}' odası başarıyla eklendi.`);
-        fetchRooms_full(); // Listeyi yenile
+
+        if (!response.ok) {
+            throw new Error('Kullanıcı adı veya şifre hatalı!');
+        }
+
+        const data = await response.json();
+        jwtToken = data.token;
+        localStorage.setItem('jwtToken', jwtToken); // Token'ı tarayıcı hafızasına kaydet
+
+        showMainApp(); // Ana paneli göster
+        fetchRooms();  // Odaları getir
+
     } catch (error) {
-        console.error('Oda eklenirken bir hata oluştu:', error);
+        console.error('Giriş yapılırken hata:', error);
+        errorElement.textContent = error.message;
     }
 }
 
-async function addDevice_full(roomId, deviceName) {
-    try {
-        const response = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}/devices`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: deviceName, status: false })
-        });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`'${deviceName}' cihazı, oda ${roomId}'e başarıyla eklendi.`);
-        fetchDevicesForRoom_full(roomId);
-    } catch (error) {
-        console.error('Cihaz eklenirken bir hata oluştu:', error);
+function handleLogout() {
+    jwtToken = null;
+    localStorage.removeItem('jwtToken'); // Token'ı hafızadan sil
+    showLoginScreen(); // Giriş ekranına geri dön
+}
+
+function handleAuthError() {
+    console.error("Yetkilendirme hatası veya token süresi dolmuş. Çıkış yapılıyor.");
+    handleLogout();
+}
+
+// =================================================================
+// API İstekleri için Yardımcı Fonksiyon (En Önemli Parça)
+// =================================================================
+async function fetchWithAuth(url, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
+
+    if (jwtToken) {
+        headers['Authorization'] = `Bearer ${jwtToken}`;
+    }
+
+    const response = await fetch(url, { ...options, headers });
+
+    // Eğer token geçersizse (401/403 hatası), otomatik olarak çıkış yap.
+    if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        throw new Error('Yetkilendirme hatası!');
+    }
+
+    return response;
+}
+
+// =================================================================
+// Form Yönetimi Fonksiyonları
+// =================================================================
+function handleAddRoom(event) {
+    event.preventDefault();
+    const newRoomNameInput = document.getElementById('new-room-name');
+    const roomName = newRoomNameInput.value.trim();
+    if (roomName) {
+        addRoom(roomName);
+        newRoomNameInput.value = '';
     }
 }
 
-async function fetchRooms_full() {
+function handleAddDevice(event) {
+    event.preventDefault();
+    const newDeviceNameInput = document.getElementById('new-device-name');
+    const deviceName = newDeviceNameInput.value.trim();
+    if (deviceName && currentRoomId) {
+        addDevice(currentRoomId, deviceName);
+        newDeviceNameInput.value = '';
+    }
+}
+
+// =================================================================
+// CRUD Fonksiyonları (Hepsi artık 'fetchWithAuth' kullanıyor)
+// =================================================================
+
+// --- Oda Fonksiyonları ---
+async function fetchRooms() {
     try {
-        const response = await fetch('http://localhost:8080/api/v1/rooms');
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
+        const response = await fetchWithAuth('http://localhost:8080/api/v1/rooms');
+        if (!response.ok) throw new Error('Odalar yüklenemedi.');
+
         const rooms = await response.json();
         const roomsList = document.getElementById('rooms-list');
         roomsList.innerHTML = '';
@@ -71,27 +152,51 @@ async function fetchRooms_full() {
             roomLink.textContent = room.name;
             roomLink.href = '#';
             roomLink.dataset.roomId = room.id;
-            roomLink.addEventListener('click', (event) => {
-                event.preventDefault();
-                fetchDevicesForRoom_full(room.id);
-            });
+            roomLink.addEventListener('click', () => fetchDevicesForRoom(room.id));
 
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Sil';
-            deleteButton.addEventListener('click', () => deleteRoom_full(room.id));
+            deleteButton.addEventListener('click', () => deleteRoom(room.id));
 
             listItem.appendChild(roomLink);
             listItem.appendChild(deleteButton);
             roomsList.appendChild(listItem);
         });
     } catch (error) {
-        console.error('Odalar çekilirken bir hata oluştu:', error);
-        document.getElementById('rooms-list').innerHTML = '<li>Odalar yüklenemedi.</li>';
+        console.error('Odalar çekilirken hata:', error);
     }
 }
 
-async function fetchDevicesForRoom_full(roomId) {
-    currentRoomId_full = roomId;
+async function addRoom(name) {
+    try {
+        const response = await fetchWithAuth('http://localhost:8080/api/v1/rooms', {
+            method: 'POST',
+            body: JSON.stringify({ name })
+        });
+        if (!response.ok) throw new Error('Oda eklenemedi.');
+        fetchRooms(); // Listeyi yenile
+    } catch (error) {
+        console.error('Oda eklenirken hata:', error);
+    }
+}
+
+async function deleteRoom(roomId) {
+    if (!confirm(`Bu odayı ve içindeki tüm cihazları silmek istediğinizden emin misiniz?`)) return;
+    try {
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Oda silinemedi.');
+        fetchRooms();
+        document.getElementById('devices-list').innerHTML = '';
+        document.getElementById('devices-panel-title').textContent = 'Cihazlar';
+        document.getElementById('add-device-form').hidden = true;
+    } catch (error) {
+        console.error('Oda silinirken hata:', error);
+    }
+}
+
+// --- Cihaz Fonksiyonları ---
+async function fetchDevicesForRoom(roomId) {
+    currentRoomId = roomId;
     const devicesList = document.getElementById('devices-list');
     const addDeviceForm = document.getElementById('add-device-form');
     const devicesPanelTitle = document.getElementById('devices-panel-title');
@@ -101,9 +206,10 @@ async function fetchDevicesForRoom_full(roomId) {
     if (roomLink) {
         devicesPanelTitle.textContent = `${roomLink.textContent} Odasındaki Cihazlar`;
     }
+
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}/devices`);
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}/devices`);
+        if (!response.ok) throw new Error('Cihazlar yüklenemedi.');
         const devices = await response.json();
         devicesList.innerHTML = '';
         if (devices.length === 0) {
@@ -112,26 +218,21 @@ async function fetchDevicesForRoom_full(roomId) {
             devices.forEach(device => {
                 const listItem = document.createElement('li');
                 const deviceInfo = document.createElement('span');
-                const statusText = device.status ? 'Açık' : 'Kapalı';
-                deviceInfo.textContent = `${device.name} - Durum: ${statusText}`;
+                deviceInfo.textContent = `${device.name} - Durum: ${device.status ? 'Açık' : 'Kapalı'}`;
 
                 const buttonGroup = document.createElement('div');
 
                 const editButton = document.createElement('button');
                 editButton.textContent = 'Düzenle';
-                editButton.addEventListener('click', () => {
-                    showEditView(listItem, device, roomId);
-                });
+                editButton.addEventListener('click', () => showEditView(listItem, device, roomId));
 
                 const toggleButton = document.createElement('button');
                 toggleButton.textContent = device.status ? 'Kapat' : 'Aç';
-                toggleButton.addEventListener('click', () => {
-                    toggleDeviceStatus_full(device.id, device.name, !device.status, roomId);
-                });
+                toggleButton.addEventListener('click', () => toggleDeviceStatus(device.id, device.name, !device.status, roomId));
 
                 const deleteDeviceButton = document.createElement('button');
                 deleteDeviceButton.textContent = 'Sil';
-                deleteDeviceButton.addEventListener('click', () => deleteDevice_full(device.id, roomId));
+                deleteDeviceButton.addEventListener('click', () => deleteDevice(device.id, roomId));
 
                 buttonGroup.appendChild(editButton);
                 buttonGroup.appendChild(toggleButton);
@@ -143,8 +244,44 @@ async function fetchDevicesForRoom_full(roomId) {
             });
         }
     } catch (error) {
-        console.error(`Oda ${roomId} için cihazlar çekilirken bir hata oluştu:`, error);
-        devicesList.innerHTML = '<li>Cihazlar yüklenirken bir hata oluştu.</li>';
+        console.error(`Oda ${roomId} için cihazlar çekilirken hata:`, error);
+    }
+}
+
+async function addDevice(roomId, deviceName) {
+    try {
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}/devices`, {
+            method: 'POST',
+            body: JSON.stringify({ name: deviceName, status: false })
+        });
+        if (!response.ok) throw new Error('Cihaz eklenemedi.');
+        fetchDevicesForRoom(roomId);
+    } catch (error) {
+        console.error('Cihaz eklenirken hata:', error);
+    }
+}
+
+async function deleteDevice(deviceId, roomId) {
+    if (!confirm(`Bu cihazı silmek istediğinizden emin misiniz?`)) return;
+    try {
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/devices/${deviceId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Cihaz silinemedi.');
+        fetchDevicesForRoom(roomId);
+    } catch (error) {
+        console.error('Cihaz silinirken hata:', error);
+    }
+}
+
+async function toggleDeviceStatus(deviceId, deviceName, newStatus, roomId) {
+    try {
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/devices/${deviceId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name: deviceName, status: newStatus })
+        });
+        if (!response.ok) throw new Error('Cihaz durumu güncellenemedi.');
+        fetchDevicesForRoom(roomId);
+    } catch (error) {
+        console.error('Cihaz durumu güncellenirken hata:', error);
     }
 }
 
@@ -164,7 +301,7 @@ function showEditView(listItem, device, roomId) {
     const cancelButton = document.createElement('button');
     cancelButton.textContent = 'İptal';
     cancelButton.addEventListener('click', () => {
-        fetchDevicesForRoom_full(roomId);
+        fetchDevicesForRoom(roomId);
     });
     listItem.appendChild(nameInput);
     listItem.appendChild(saveButton);
@@ -173,61 +310,13 @@ function showEditView(listItem, device, roomId) {
 
 async function updateDeviceName(device, newName, roomId) {
     try {
-        const response = await fetch(`http://localhost:8080/api/v1/devices/${device.id}`, {
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/devices/${device.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName, status: device.status })
         });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`Cihaz ${device.id} ismi başarıyla güncellendi.`);
-        fetchDevicesForRoom_full(roomId);
+        if (!response.ok) throw new Error('Cihaz adı güncellenemedi.');
+        fetchDevicesForRoom(roomId);
     } catch (error) {
-        console.error(`Cihaz ${device.id} güncellenirken bir hata oluştu:`, error);
-    }
-}
-
-async function toggleDeviceStatus_full(deviceId, deviceName, newStatus, roomId) {
-    try {
-        const response = await fetch(`http://localhost:8080/api/v1/devices/${deviceId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: deviceName, status: newStatus })
-        });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`Cihaz ${deviceId} başarıyla güncellendi.`);
-        fetchDevicesForRoom_full(roomId);
-    } catch (error) {
-        console.error(`Cihaz ${deviceId} güncellenirken bir hata oluştu:`, error);
-    }
-}
-
-async function deleteRoom_full(roomId) {
-    if (!confirm(`ID ${roomId} olan odayı ve içindeki tüm cihazları silmek istediğinize emin misiniz?`)) {
-        return;
-    }
-    try {
-        const response = await fetch(`http://localhost:8080/api/v1/rooms/${roomId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`Oda ${roomId} başarıyla silindi.`);
-        fetchRooms_full();
-        document.getElementById('devices-list').innerHTML = '';
-        document.getElementById('devices-panel-title').textContent = 'Cihazlar';
-        document.getElementById('add-device-form').hidden = true;
-    } catch (error) {
-        console.error(`Oda ${roomId} silinirken bir hata oluştu:`, error);
-    }
-}
-
-async function deleteDevice_full(deviceId, roomId) {
-    if (!confirm(`ID ${deviceId} olan cihazı silmek istediğinize emin misiniz?`)) {
-        return;
-    }
-    try {
-        const response = await fetch(`http://localhost:8080/api/v1/devices/${deviceId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error(`HTTP hatası! Durum: ${response.status}`);
-        console.log(`Cihaz ${deviceId} başarıyla silindi.`);
-        fetchDevicesForRoom_full(roomId);
-    } catch (error) {
-        console.error(`Cihaz ${deviceId} silinirken bir hata oluştu:`, error);
+        console.error('Cihaz adı güncellenirken hata:', error);
     }
 }
