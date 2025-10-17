@@ -3,48 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <title>Akıllı Ev Kontrol Paneli</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="container mt-4">
 
-<div id="notification-container"></div>
-
-<div id="login-container" class="panel">
-    <h2>Giriş Yap</h2>
-    <form id="login-form">
-        <input type="text" id="username" placeholder="Kullanıcı Adı" required>
-        <input type="password" id="password" placeholder="Şifre" required>
-        <button type="submit">Giriş Yap</button>
-    </form>
-    <p id="login-error" class="error-message"></p>
-</div>
-
-<div id="main-container" hidden>
-    <div class="header">
-        <h1>Akıllı Ev Kontrol Paneli</h1>
-        <button id="logout-button">Çıkış Yap</button>
+    <div id="login-container" class="card p-4 mx-auto" style="max-width: 400px;">
+        <h2 class="card-title text-center">Giriş Yap</h2>
+        <form id="login-form">
+            <div class="mb-3">
+                <input type="text" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+            </div>
+            <div class="mb-3">
+                <input type="password" id="password" class="form-control" placeholder="Şifre" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+        </form>
+        <p id="login-error" class="text-danger mt-2"></p>
     </div>
 
-    <div class="container">
-        <div class="panel">
-            <h2>Odalar</h2>
-            <form id="add-room-form">
-                <input type="text" id="new-room-name" placeholder="Yeni oda adı..." required />
-                <button type="submit">Oda Ekle</button>
-            </form>
-            <ul id="rooms-list"></ul>
+    <div id="main-container" hidden>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>Akıllı Ev Kontrol Paneli</h1>
+            <button id="logout-button" class="btn btn-secondary">Çıkış Yap</button>
         </div>
 
-        <div class="panel">
-            <h2 id="devices-panel-title">Cihazlar</h2>
-            <form id="add-device-form" hidden>
-                <input type="text" id="new-device-name" placeholder="Yeni cihaz adı..." required />
-                <button type="submit">Cihaz Ekle</button>
-            </form>
-            <ul id="devices-list"></ul>
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="card-title">Odalar</h2>
+                        <form id="add-room-form" class="d-flex gap-2 mb-3">
+                            <input type="text" id="new-room-name" class="form-control" placeholder="Yeni oda adı..." required />
+                            <button type="submit" class="btn btn-success flex-shrink-0">Ekle</button>
+                        </form>
+                        <ul id="rooms-list" class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 id="devices-panel-title" class="card-title">Cihazlar</h2>
+                        <form id="add-device-form" class="d-flex gap-2 mb-3" hidden>
+                            <input type="text" id="new-device-name" class="form-control" placeholder="Yeni cihaz adı..." required />
+                            <button type="submit" class="btn btn-success flex-shrink-0">Ekle</button>
+                        </form>
+                        <ul id="devices-list" class="list-group"></ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
 
 <script src="app.js"></script>
 </body>
