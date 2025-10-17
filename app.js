@@ -45,10 +45,17 @@ function showMainApp() {
 function showNotification(message, type = 'success') {
     const container = document.getElementById('notification-container');
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+    const alertType = type === 'success' ? 'success' : 'danger';
+    // Bootstrap Alert Class'larını kullanıyoruz
+    notification.className = `alert alert-${alertType} alert-dismissible fade show m-2`;
+    notification.role = 'alert';
+    notification.innerHTML = message;
     container.appendChild(notification);
-    setTimeout(() => { notification.remove(); }, 3000);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        // Animasyon bittikten sonra elementi kaldır
+        notification.addEventListener('transitionend', () => notification.remove());
+    }, 4000);
 }
 
 // =================================================================
@@ -87,7 +94,7 @@ function handleLogout() {
 }
 
 function handleAuthError() {
-    showNotification("Oturum süreniz doldu, lütfen tekrar giriş yapın.", "error");
+    showNotification("Oturum süreniz doldu veya yetkiniz yok.", "error");
     handleLogout();
 }
 
@@ -131,7 +138,7 @@ function handleAddDevice(event) {
 }
 
 // =================================================================
-// CRUD Fonksiyonları (Bildirimli)
+// CRUD Fonksiyonları (Bildirimli ve Bootstrap Uyumlu)
 // =================================================================
 
 // --- Oda Fonksiyonları ---
@@ -143,17 +150,32 @@ async function fetchRooms() {
         const roomsList = document.getElementById('rooms-list');
         roomsList.innerHTML = '';
         rooms.forEach(room => {
-            const listItem = document.createElement('li');
-            const roomLink = document.createElement('a');
-            roomLink.textContent = room.name;
-            roomLink.href = '#';
-            roomLink.dataset.roomId = room.id;
-            roomLink.addEventListener('click', () => fetchDevicesForRoom(room.id));
+            const listItem = document.createElement('a');
+            listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            listItem.href = '#';
+            listItem.dataset.roomId = room.id;
+
+            const roomNameSpan = document.createElement('span');
+            roomNameSpan.textContent = room.name;
+
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Sil';
-            deleteButton.addEventListener('click', () => deleteRoom(room.id));
-            listItem.appendChild(roomLink);
+            deleteButton.innerHTML = '&times;'; // Çarpı işareti
+            deleteButton.className = 'btn-close';
+            deleteButton.setAttribute('aria-label', 'Close');
+            deleteButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Linkin tıklanma olayını engelle
+                deleteRoom(room.id);
+            });
+
+            listItem.appendChild(roomNameSpan);
             listItem.appendChild(deleteButton);
+
+            listItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('#rooms-list .list-group-item').forEach(el => el.classList.remove('active'));
+                listItem.classList.add('active');
+                fetchDevicesForRoom(room.id);
+            });
             roomsList.appendChild(listItem);
         });
     } catch (error) {
@@ -167,12 +189,14 @@ async function addRoom(name) {
             method: 'POST',
             body: JSON.stringify({ name })
         });
-        if (!response.ok) throw new Error();
-        showNotification(`'${name}' odası başarıyla eklendi!`, 'success');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Oda eklenemedi.' }));
+            throw new Error(errorData.message);
+        }
+        showNotification(`'${name}' odası eklendi!`, 'success');
         fetchRooms();
     } catch (error) {
-        console.error('Oda eklenirken hata:', error);
-        showNotification('Oda eklenirken bir hata oluştu.', 'error');
+        showNotification(error.message, 'error');
     }
 }
 
@@ -180,15 +204,14 @@ async function deleteRoom(roomId) {
     if (!confirm(`Bu odayı ve içindeki tüm cihazları silmek istediğinizden emin misiniz?`)) return;
     try {
         const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error();
-        showNotification(`Oda başarıyla silindi.`, 'success');
+        if (!response.ok) throw new Error('Oda silinemedi.');
+        showNotification(`Oda silindi.`, 'success');
         fetchRooms();
         document.getElementById('devices-list').innerHTML = '';
         document.getElementById('devices-panel-title').textContent = 'Cihazlar';
         document.getElementById('add-device-form').hidden = true;
     } catch (error) {
-        console.error('Oda silinirken hata:', error);
-        showNotification('Oda silinirken bir hata oluştu.', 'error');
+        showNotification(error.message, 'error');
     }
 }
 
@@ -198,9 +221,9 @@ async function fetchDevicesForRoom(roomId) {
     const devicesList = document.getElementById('devices-list');
     const addDeviceForm = document.getElementById('add-device-form');
     const devicesPanelTitle = document.getElementById('devices-panel-title');
-    devicesList.innerHTML = '<li>Yükleniyor...</li>';
+    devicesList.innerHTML = `<li class="list-group-item"><div class="spinner-border spinner-border-sm" role="status"></div> Yükleniyor...</li>`;
     addDeviceForm.hidden = false;
-    const roomLink = document.querySelector(`a[data-room-id='${roomId}']`);
+    const roomLink = document.querySelector(`a.list-group-item[data-room-id='${roomId}'] span`);
     if (roomLink) {
         devicesPanelTitle.textContent = `${roomLink.textContent} Odasındaki Cihazlar`;
     }
@@ -211,67 +234,72 @@ async function fetchDevicesForRoom(roomId) {
         const devices = await response.json();
         devicesList.innerHTML = '';
         if (devices.length === 0) {
-            devicesList.innerHTML = '<li>Bu odada cihaz bulunmuyor.</li>';
+            devicesList.innerHTML = '<li class="list-group-item">Bu odada cihaz bulunmuyor.</li>';
         } else {
             devices.forEach(device => {
                 const listItem = document.createElement('li');
-                const deviceInfo = document.createElement('span');
-                deviceInfo.textContent = `${device.name} - Durum: ${device.status ? 'Açık' : 'Kapalı'}`;
-
-                const buttonGroup = document.createElement('div');
-
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Düzenle';
-                editButton.addEventListener('click', () => showEditView(listItem, device, roomId));
-
-                const toggleButton = document.createElement('button');
-                toggleButton.textContent = device.status ? 'Kapat' : 'Aç';
-                toggleButton.addEventListener('click', () => toggleDeviceStatus(device.id, device.name, !device.status, roomId));
-
-                const deleteDeviceButton = document.createElement('button');
-                deleteDeviceButton.textContent = 'Sil';
-                deleteDeviceButton.addEventListener('click', () => deleteDevice(device.id, roomId));
-
-                buttonGroup.appendChild(editButton);
-                buttonGroup.appendChild(toggleButton);
-                buttonGroup.appendChild(deleteDeviceButton);
-
-                listItem.appendChild(deviceInfo);
-                listItem.appendChild(buttonGroup);
+                listItem.className = 'list-group-item'; // Sadece bir satır
+                listItem.dataset.deviceId = device.id;
+                renderDeviceView(listItem, device, roomId); // Ayrı bir fonksiyona taşıdık
                 devicesList.appendChild(listItem);
             });
         }
     } catch (error) {
-        console.error(`Oda ${roomId} için cihazlar çekilirken hata:`, error);
+        console.error(`Cihazlar çekilirken hata:`, error);
+        devicesList.innerHTML = '<li class="list-group-item text-danger">Cihazlar yüklenemedi.</li>';
     }
+}
+
+function renderDeviceView(listItem, device, roomId) {
+    listItem.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+            <span>${device.name} - Durum: ${device.status ? 'Açık' : 'Kapalı'}</span>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm me-2 edit-btn">Düzenle</button>
+                <button class="btn ${device.status ? 'btn-outline-warning' : 'btn-outline-success'} btn-sm me-2 toggle-btn">${device.status ? 'Kapat' : 'Aç'}</button>
+                <button class="btn btn-outline-danger btn-sm delete-btn">Sil</button>
+            </div>
+        </div>
+    `;
+    listItem.querySelector('.edit-btn').addEventListener('click', () => renderEditView(listItem, device, roomId));
+    listItem.querySelector('.toggle-btn').addEventListener('click', () => toggleDeviceStatus(device.id, device.name, !device.status, roomId));
+    listItem.querySelector('.delete-btn').addEventListener('click', () => deleteDevice(device.id, roomId));
+}
+
+function renderEditView(listItem, device, roomId) {
+    listItem.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <input type="text" class="form-control me-2" value="${device.name}">
+            <div>
+                <button class="btn btn-primary btn-sm me-2 save-btn">Kaydet</button>
+                <button class="btn btn-secondary btn-sm cancel-btn">İptal</button>
+            </div>
+        </div>
+    `;
+    listItem.querySelector('.cancel-btn').addEventListener('click', () => renderDeviceView(listItem, device, roomId));
+    listItem.querySelector('.save-btn').addEventListener('click', () => {
+        const newName = listItem.querySelector('input').value.trim();
+        if (newName) updateDeviceName(device, newName, roomId);
+    });
 }
 
 async function addDevice(roomId, deviceName) {
     try {
-        const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}/devices`, {
-            method: 'POST',
-            body: JSON.stringify({ name: deviceName, status: false })
-        });
-        if (!response.ok) throw new Error();
-        showNotification(`'${deviceName}' cihazı başarıyla eklendi.`, 'success');
+        const response = await fetchWithAuth(`http://localhost:8080/api/v1/rooms/${roomId}/devices`, { method: 'POST', body: JSON.stringify({ name: deviceName, status: false }) });
+        if (!response.ok) throw new Error('Cihaz eklenemedi');
+        showNotification(`'${deviceName}' cihazı eklendi.`, 'success');
         fetchDevicesForRoom(roomId);
-    } catch (error) {
-        console.error('Cihaz eklenirken hata:', error);
-        showNotification('Cihaz eklenirken bir hata oluştu.', 'error');
-    }
+    } catch (error) { showNotification(error.message, 'error'); }
 }
 
 async function deleteDevice(deviceId, roomId) {
     if (!confirm(`Bu cihazı silmek istediğinizden emin misiniz?`)) return;
     try {
         const response = await fetchWithAuth(`http://localhost:8080/api/v1/devices/${deviceId}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error();
-        showNotification(`Cihaz başarıyla silindi.`, 'success');
+        if (!response.ok) throw new Error('Cihaz silinemedi');
+        showNotification(`Cihaz silindi.`, 'success');
         fetchDevicesForRoom(roomId);
-    } catch (error) {
-        console.error('Cihaz silinirken hata:', error);
-        showNotification('Cihaz silinirken bir hata oluştu.', 'error');
-    }
+    } catch (error) { showNotification(error.message, 'error'); }
 }
 
 async function toggleDeviceStatus(deviceId, deviceName, newStatus, roomId) {
@@ -280,36 +308,10 @@ async function toggleDeviceStatus(deviceId, deviceName, newStatus, roomId) {
             method: 'PUT',
             body: JSON.stringify({ name: deviceName, status: newStatus })
         });
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Cihaz durumu güncellenemedi');
         showNotification(`Cihaz durumu güncellendi.`, 'success');
         fetchDevicesForRoom(roomId);
-    } catch (error) {
-        console.error('Cihaz durumu güncellenirken hata:', error);
-        showNotification('Cihaz durumu güncellenirken bir hata oluştu.', 'error');
-    }
-}
-
-function showEditView(listItem, device, roomId) {
-    listItem.innerHTML = '';
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.value = device.name;
-    const saveButton = document.createElement('button');
-    saveButton.textContent = 'Kaydet';
-    saveButton.addEventListener('click', () => {
-        const newName = nameInput.value.trim();
-        if (newName) {
-            updateDeviceName(device, newName, roomId);
-        }
-    });
-    const cancelButton = document.createElement('button');
-    cancelButton.textContent = 'İptal';
-    cancelButton.addEventListener('click', () => {
-        fetchDevicesForRoom(roomId);
-    });
-    listItem.appendChild(nameInput);
-    listItem.appendChild(saveButton);
-    listItem.appendChild(cancelButton);
+    } catch (error) { showNotification(error.message, 'error'); }
 }
 
 async function updateDeviceName(device, newName, roomId) {
@@ -318,11 +320,8 @@ async function updateDeviceName(device, newName, roomId) {
             method: 'PUT',
             body: JSON.stringify({ name: newName, status: device.status })
         });
-        if (!response.ok) throw new Error();
+        if (!response.ok) throw new Error('Cihaz adı güncellenemedi');
         showNotification(`Cihaz adı güncellendi.`, 'success');
         fetchDevicesForRoom(roomId);
-    } catch (error) {
-        console.error('Cihaz adı güncellenirken hata:', error);
-        showNotification('Cihaz adı güncellenirken bir hata oluştu.', 'error');
-    }
+    } catch (error) { showNotification(error.message, 'error'); }
 }
