@@ -123,3 +123,15 @@ form input {
 .notification.error {
     background-color: #dc3545;
 }
+
+/* style.css en altına ekle */
+
+.room-card {
+    cursor: pointer; /* Üzerine gelince tıklanabilir olduğunu gösterir */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Hafif animasyon */
+}
+
+.room-card:hover {
+    transform: translateY(-5px); /* Üzerine gelince hafifçe yukarı kalksın */
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15); /* Gölge belirginleşsin */
+}
