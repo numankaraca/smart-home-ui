@@ -24,9 +24,11 @@ function setupEventListeners() {
     document.getElementById('logout-button').addEventListener('click', handleLogout);
     document.getElementById('add-room-form').addEventListener('submit', handleAddRoom);
     document.getElementById('add-device-form').addEventListener('submit', handleAddDevice);
+
+
     document.getElementById('back-to-rooms-button').addEventListener('click', () => {
-        showView('rooms'); // Geri dön butonu Odalar görünümünü açar
-        fetchRooms(); // Odaları tekrar listeleyelim (aktif oda stilini sıfırlamak için)
+        showView('rooms');
+        fetchRooms();
     });
 }
 

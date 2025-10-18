@@ -1,137 +1,26 @@
+/* Genel Stil Resetleme ve Temel Ayarlar */
 body {
-    font-family: sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
-    margin: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #495057;
+    margin: 0;
+    padding-bottom: 50px;
 }
 
-h1, h2 {
-    color: #444;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
-}
-
-.container {
-    display: flex;
-    gap: 30px;
-}
-
-.panel {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    flex: 1;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    padding: 12px 8px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-li:last-child {
-    border-bottom: none;
-}
-
-a {
-    text-decoration: none;
-    color: #007bff;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-button {
-    padding: 5px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #f0f0f0;
-}
-
-button:hover {
-    background-color: #e0e0e0;
-}
-
-/* style.css dosyasının en altına ekle */
-
-form {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-form input {
-    flex-grow: 1; /* Input alanının kalan boşluğu kaplamasını sağlar */
-    padding: 5px;
-}
-
-/* style.css dosyasının en altına ekle */
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-#login-container {
-    max-width: 400px;
-    margin: 100px auto; /* Sayfanın ortasında durması için */
-}
-
-.error-message {
-    color: red;
-    margin-top: 10px;
-}
-
-/* =================================
-   Notification Styles
-   ================================= */
+/* Bildirim Alanı */
 #notification-container {
-    position: fixed; /* Sayfayı kaydırsan bile yerinde kalır */
-    top: 20px;
+    position: fixed;
+    bottom: 20px;
     right: 20px;
-    z-index: 1000; /* Diğer tüm elementlerin üzerinde görünmesini sağlar */
+    z-index: 1050;
 }
 
-.notification {
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    color: white;
-    min-width: 250px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-}
-
-/* Başarı bildirimleri için yeşil arka plan */
-.notification.success {
-    background-color: #28a745;
-}
-
-/* Hata bildirimleri için kırmızı arka plan */
-.notification.error {
-    background-color: #dc3545;
-}
-
-/* style.css en altına ekle */
-
+/* Oda Kartı Tıklama Efekti (Bu kalabilir) */
 .room-card {
-    cursor: pointer; /* Üzerine gelince tıklanabilir olduğunu gösterir */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Hafif animasyon */
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-
 .room-card:hover {
-    transform: translateY(-5px); /* Üzerine gelince hafifçe yukarı kalksın */
-    box-shadow: 0 8px 15px rgba(0,0,0,0.15); /* Gölge belirginleşsin */
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.1);
 }

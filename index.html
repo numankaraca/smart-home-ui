@@ -6,75 +6,79 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050;"></div>
+<div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1050;"></div>
 
-<div id="login-container" class="card p-4 mx-auto mt-5" style="max-width: 400px;">
-    <h2 class="card-title text-center mb-4">Giriş Yap</h2>
-    <form id="login-form">
-        <div class="mb-3">
-            <input type="text" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+<div id="login-container" class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card p-4 shadow-sm">
+                <h2 class="card-title text-center mb-4">Giriş Yap</h2>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="username" class="form-label visually-hidden">Kullanıcı Adı</label>
+                        <input type="text" id="username" class="form-control" placeholder="Kullanıcı Adı" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label visually-hidden">Şifre</label>
+                        <input type="password" id="password" class="form-control" placeholder="Şifre" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                </form>
+                <p id="login-error" class="text-danger mt-3 text-center mb-0"></p>
+            </div>
         </div>
-        <div class="mb-3">
-            <input type="password" id="password" class="form-control" placeholder="Şifre" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
-    </form>
-    <p id="login-error" class="text-danger mt-3 text-center"></p>
+    </div>
 </div>
 
 <div id="app-container" class="container mt-4" hidden>
-
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-        <h1 id="app-title">Akıllı Ev Kontrol Paneli</h1> {/* JavaScript'in aradığı ID: "app-title" */}
-        <button id="logout-button" class="btn btn-outline-secondary">Çıkış Yap</button>
+        <h1 id="app-title" class="h3 mb-0">Akıllı Ev Kontrol Paneli</h1>
+        <button id="logout-button" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sign-out-alt me-1"></i>Çıkış Yap</button>
     </div>
-
     <div id="rooms-view">
         <div class="row g-4">
-            <div class="col-12"> {/* Oda ekleme formunu tam genişlik yapalım */}
+            <div class="col-12">
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h2 class="card-title h5">Yeni Oda Ekle</h2>
+                        <h2 class="card-title h5 mb-3">Yeni Oda Ekle</h2>
                         <form id="add-room-form" class="d-flex gap-2">
                             <input type="text" id="new-room-name" class="form-control form-control-sm" placeholder="Oda adı..." required />
-                            <button type="submit" class="btn btn-success btn-sm flex-shrink-0">Ekle</button>
+                            <button type="submit" class="btn btn-success btn-sm flex-shrink-0"><i class="fas fa-plus me-1"></i> Ekle</button>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="col-12">
-                <h2 class="h5">Mevcut Odalar</h2>
-                {/* Oda kartları buraya gelecek */}
-                <div id="rooms-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                    {/* Oda kartları JavaScript ile eklenecek */}
+                <h2 class="h5 mb-3">Mevcut Odalar</h2>
+                <div id="rooms-list" class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
                 </div>
             </div>
         </div>
     </div>
-
     <div id="devices-view" hidden>
-        <div class="row g-4">
-            <div class="col-12">
-                <button id="back-to-rooms-button" class="btn btn-outline-secondary mb-3"><i class="fas fa-arrow-left me-2"></i> Odalara Geri Dön</button>
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <button id="back-to-rooms-button" class="btn btn-outline-secondary btn-sm mb-3"><i class="fas fa-arrow-left me-1"></i> Odalara Geri Dön</button>
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h2 id="devices-panel-title" class="card-title h5">Odadaki Cihazlar</h2>
                         <form id="add-device-form" class="d-flex gap-2 mb-3">
                             <input type="text" id="new-device-name" class="form-control form-control-sm" placeholder="Yeni cihaz adı..." required />
-                            <button type="submit" class="btn btn-success btn-sm flex-shrink-0">Ekle</button>
+                            <button type="submit" class="btn btn-success btn-sm flex-shrink-0"><i class="fas fa-plus me-1"></i> Ekle</button>
                         </form>
-                        <ul id="devices-list" class="list-group">
-                            {/* Cihazlar JavaScript ile eklenecek */}
+                        <ul id="devices-list" class="list-group list-group-flush">
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-</div> <script src="app.js"></script>
+<script src="app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
